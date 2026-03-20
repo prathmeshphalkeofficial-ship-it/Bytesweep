@@ -1782,6 +1782,107 @@
         #folderPicker {
             display: none
         }
+
+        /* MOBILE RESPONSIVENESS */
+        @media screen and (max-width: 768px) {
+            html, body {
+                overflow: hidden !important;
+                height: 100% !important;
+            }
+
+            .main-container {
+                display: flex !important;
+                flex-direction: column !important;
+                height: calc(100vh - 60px) !important;
+                overflow: hidden !important;
+            }
+
+            .sidebar {
+                width: 100% !important;
+                height: 280px !important;
+                border-right: none !important;
+                border-bottom: 2px solid var(--border) !important;
+                overflow-y: auto !important;
+                flex-shrink: 0 !important;
+            }
+
+            .topbar {
+                padding: 0 16px !important;
+                gap: 12px !important;
+                flex-shrink: 0 !important;
+            }
+
+            .topbar-nav {
+                margin-left: 0 !important;
+                overflow-x: auto !important;
+                white-space: nowrap !important;
+                padding-bottom: 4px !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+
+            .topbar-nav::-webkit-scrollbar {
+                height: 0 !important;
+            }
+
+            .topbar-status {
+                display: none !important;
+            }
+
+            .content {
+                flex: 1 !important;
+                overflow-y: auto !important;
+                display: flex !important;
+                flex-direction: column !important;
+                min-height: 0 !important;
+            }
+
+            .tab-bar {
+                padding: 0 16px !important;
+                overflow-x: auto !important;
+                white-space: nowrap !important;
+                -webkit-overflow-scrolling: touch !important;
+                flex-shrink: 0 !important;
+                height: 42px !important;
+            }
+
+            .tab-bar::-webkit-scrollbar {
+                height: 0 !important;
+            }
+
+            .stats-grid, .data-sections {
+                display: block !important;
+                padding: 16px !important;
+            }
+
+            .stat-card, .data-section {
+                width: 100% !important;
+                margin-bottom: 16px !important;
+            }
+
+            .stat-value {
+                font-size: 24px !important;
+            }
+
+            .view-content, .view, .terminal-view {
+                flex: 1 !important;
+                display: none;
+                flex-direction: column !important;
+                min-height: 0 !important;
+            }
+
+            .view.active, .view-content.active {
+                display: flex !important;
+            }
+
+            .mini-terminal, #miniTerminal {
+                display: none !important;
+            }
+
+            #terminal {
+                padding: 16px !important;
+                flex: 1 !important;
+            }
+        }
     </style>
 </head>
 
