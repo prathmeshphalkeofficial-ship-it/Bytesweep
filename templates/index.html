@@ -1,0 +1,2272 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>ByteSweep - Full System Scanner</title>
+    <link rel="icon" href="/static/logo.png" type="image/png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <style>
+        :root {
+            --bg: #0f0f13;
+            --bg2: #18181f;
+            --bg3: #1e1e28;
+            --bg4: #252532;
+            --accent: #6366f1;
+            --accent2: #818cf8;
+            --green: #22c55e;
+            --red: #ef4444;
+            --orange: #f97316;
+            --yellow: #eab308;
+            --cyan: #06b6d4;
+            --purple: #a855f7;
+            --text: #f1f5f9;
+            --text2: #94a3b8;
+            --text3: #64748b;
+            --border: rgba(255,255,255,0.08);
+            --mono: "JetBrains Mono", monospace;
+            --ui: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--ui);
+        }
+
+        /* TOPBAR */
+        .topbar {
+            height: 60px;
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            gap: 20px;
+        }
+
+        .topbar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .topbar-logo img {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+        }
+
+        .topbar-brand {
+            font-size: 18px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent), var(--cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .topbar-nav {
+            display: flex;
+            gap: 4px;
+            margin-left: 30px;
+        }
+
+        .topbar-nav-item {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text2);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .topbar-nav-item:hover {
+            background: var(--bg3);
+            color: var(--text);
+        }
+
+        .topbar-nav-item.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .topbar-status {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: var(--bg3);
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--text2);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text3);
+        }
+
+        .status-dot.live {
+            background: var(--green);
+            box-shadow: 0 0 10px var(--green);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* MAIN LAYOUT */
+        .main-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            height: calc(100vh - 60px);
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            background: var(--bg2);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sb-section {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sb-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text3);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 10px;
+        }
+
+        /* Location Cards */
+        .loc-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .loc-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .loc-card:hover {
+            background: var(--bg4);
+            border-color: var(--accent);
+        }
+
+        .loc-card.selected {
+            background: rgba(99, 102, 241, 0.15);
+            border-color: var(--accent);
+        }
+
+        .loc-icon {
+            font-size: 20px;
+        }
+
+        .loc-info {
+            flex: 1;
+        }
+
+        .loc-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        .loc-path {
+            font-size: 10px;
+            color: var(--text3);
+            font-family: var(--mono);
+        }
+
+        /* Settings */
+        .settings-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .settings-row label {
+            font-size: 12px;
+            color: var(--text2);
+            min-width: 80px;
+        }
+
+        .settings-input {
+            flex: 1;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: var(--text);
+            font-size: 12px;
+            outline: none;
+        }
+
+        .settings-input:focus {
+            border-color: var(--accent);
+        }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--green), #16a34a);
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--red);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Content Area */
+        .content {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            padding: 20px 24px;
+        }
+
+        .stat-card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .stat-card.blue::before { background: linear-gradient(90deg, var(--accent), var(--cyan)); }
+        .stat-card.green::before { background: linear-gradient(90deg, var(--green), #22d3ee); }
+        .stat-card.orange::before { background: linear-gradient(90deg, var(--orange), var(--yellow)); }
+        .stat-card.red::before { background: linear-gradient(90deg, var(--red), var(--purple)); }
+
+        .stat-icon {
+            font-size: 28px;
+            margin-bottom: 12px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text3);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Progress Bar */
+        .progress-section {
+            padding: 0 24px 20px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--bg3);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--green), #00ff88, var(--cyan));
+            border-radius: 4px;
+            transition: width 0.3s;
+            box-shadow: 0 0 10px var(--green);
+        }
+
+        .mini-terminal {
+            background: #0a0a0f;
+            margin: 16px 24px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .mini-term-header {
+            background: var(--bg3);
+            padding: 10px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+            color: var(--accent);
+        }
+
+        .mini-term-content {
+            padding: 12px 16px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-family: var(--mono);
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .mini-term-content .term-line {
+            color: #00ff88;
+            padding: 1px 0;
+        }
+
+        .mini-term-content .term-prompt {
+            color: var(--accent);
+            margin-right: 6px;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--text2);
+        }
+
+        /* Data Sections */
+        .data-sections {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 24px 24px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .data-section {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .section-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .section-icon.blue { background: rgba(99, 102, 241, 0.15); }
+        .section-icon.green { background: rgba(34, 197, 94, 0.15); }
+        .section-icon.orange { background: rgba(249, 115, 22, 0.15); }
+        .section-icon.red { background: rgba(239, 68, 68, 0.15); }
+
+        .section-count {
+            font-size: 12px;
+            color: var(--text3);
+            background: var(--bg3);
+            padding: 4px 10px;
+            border-radius: 12px;
+        }
+
+        .section-content {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .file-row {
+            display: flex;
+            align-items: center;
+            padding: 10px 18px;
+            border-bottom: 1px solid var(--border);
+            gap: 12px;
+            transition: background 0.15s;
+        }
+
+        .file-row:hover {
+            background: var(--bg3);
+        }
+
+        .file-row:last-child {
+            border-bottom: none;
+        }
+
+        .file-name {
+            flex: 1;
+            font-size: 12px;
+            color: var(--text);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-family: var(--mono);
+        }
+
+        .file-size {
+            font-size: 12px;
+            color: var(--text2);
+            min-width: 70px;
+            text-align: right;
+        }
+
+        .file-action {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--red);
+            transition: all 0.15s;
+        }
+
+        .file-action:hover {
+            background: var(--red);
+            color: white;
+        }
+
+        .empty-state {
+            padding: 40px;
+            text-align: center;
+            color: var(--text3);
+            font-size: 13px;
+        }
+
+        .view-content {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+        }
+
+        .log-content {
+            padding: 16px 20px;
+            font-family: var(--mono);
+            font-size: 12px;
+            line-height: 1.8;
+            overflow-y: auto;
+            height: calc(100vh - 180px);
+        }
+
+        .log-line {
+            color: var(--text2);
+            padding: 2px 0;
+        }
+
+        .log-line.success { color: var(--green); }
+        .log-line.error { color: var(--red); }
+        .log-line.info { color: var(--cyan); }
+        .log-line.warning { color: var(--yellow); }
+
+        .terminal-view {
+            background: #0a0a0f;
+            height: calc(100vh - 140px);
+            overflow-y: auto;
+            padding: 16px 20px;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 13px;
+        }
+
+        .terminal-content {
+            color: #00ff88;
+        }
+
+        .term-line {
+            padding: 2px 0;
+            line-height: 1.5;
+        }
+
+        .term-prompt {
+            color: var(--accent);
+            margin-right: 8px;
+        }
+
+        .term-info {
+            color: #00d4ff;
+        }
+
+        .term-warn {
+            color: var(--yellow);
+        }
+
+        .term-error {
+            color: var(--red);
+        }
+
+        .term-success {
+            color: var(--green);
+        }
+
+        .term-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background: #00ff88;
+            animation: blink 1s infinite;
+            vertical-align: middle;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg4);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text3);
+        }
+
+        .sb-mid {
+            padding: 16px 18px 0;
+            flex: 1;
+        }
+
+        .sb-status-row {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, .25);
+            letter-spacing: .04em;
+            margin-bottom: 14px;
+        }
+
+        .sb-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .2);
+            flex-shrink: 0;
+            transition: all .3s;
+        }
+
+        .sb-dot.live {
+            background: #30d158;
+            box-shadow: 0 0 7px #30d158;
+            animation: sbpulse 1.4s ease-in-out infinite;
+        }
+
+        @keyframes sbpulse {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .3
+            }
+        }
+
+        .sb-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, .05);
+            margin: 0 0 14px;
+        }
+
+        .topbar-inline {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .topbar-inline label {
+            font-size: 10px;
+            color: rgba(255, 255, 255, .3);
+            letter-spacing: .05em;
+        }
+
+        .path-input-sb {
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid rgba(255, 255, 255, .08);
+            border-radius: 8px;
+            padding: 8px 10px;
+            color: var(--text);
+            font-size: 11px;
+            font-family: var(--mono);
+            outline: none;
+            width: 100%;
+            transition: border .2s;
+        }
+
+        .path-input-sb:focus {
+            border-color: rgba(10, 132, 255, .5);
+        }
+
+        .path-input-sb::placeholder {
+            color: rgba(255, 255, 255, .22);
+        }
+
+        .inline-row {
+            display: flex;
+            gap: 6px;
+        }
+
+        .browse-btn-sb {
+            background: rgba(255, 255, 255, .07);
+            border: 1px solid rgba(255, 255, 255, .1);
+            border-radius: 7px;
+            padding: 7px 10px;
+            color: rgba(255, 255, 255, .55);
+            font-size: 11px;
+            cursor: pointer;
+            transition: all .2s;
+            white-space: nowrap;
+        }
+
+        .browse-btn-sb:hover {
+            background: rgba(255, 255, 255, .12);
+            color: var(--text);
+        }
+
+        .size-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            color: rgba(255, 255, 255, .3);
+        }
+
+        .size-input-sb {
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid rgba(255, 255, 255, .08);
+            border-radius: 7px;
+            padding: 6px 8px;
+            color: var(--text);
+            font-size: 11px;
+            outline: none;
+            width: 60px;
+            text-align: center;
+            font-family: var(--mono);
+        }
+
+        .loc-bar {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            max-height: 180px;
+            overflow-y: auto;
+            padding: 4px 0;
+        }
+
+        .loc-bar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .loc-bar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, .1);
+            border-radius: 4px;
+        }
+
+        .loc-loading {
+            font-size: 10px;
+            color: rgba(255, 255, 255, .3);
+            padding: 8px;
+            text-align: center;
+        }
+
+        .loc-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 10px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 11px;
+            color: rgba(255, 255, 255, .5);
+            transition: all .15s;
+            border: 1px solid transparent;
+        }
+
+        .loc-item:hover {
+            background: rgba(255, 255, 255, .07);
+            color: rgba(255, 255, 255, .85);
+        }
+
+        .loc-item.selected {
+            background: rgba(10, 132, 255, .15);
+            border-color: rgba(10, 132, 255, .4);
+            color: #0a84ff;
+        }
+
+        .loc-icon {
+            font-size: 14px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .loc-name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .sb-foot {
+            padding: 14px 18px 16px;
+            border-top: 1px solid rgba(255, 255, 255, .05);
+        }
+
+        .scan-btn-main {
+            width: 100%;
+            background: linear-gradient(135deg, #0a84ff, #0054a8);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s;
+            letter-spacing: .02em;
+        }
+
+        .scan-btn-main:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(10, 132, 255, .4);
+        }
+
+        .scan-btn-main:active {
+            transform: scale(.98);
+        }
+
+        .scan-btn-main:disabled {
+            background: rgba(10, 132, 255, .25);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .stop-btn-main {
+            width: 100%;
+            background: rgba(255, 69, 58, .15);
+            color: #ff453a;
+            border: 1px solid rgba(255, 69, 58, .3);
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s;
+            letter-spacing: .02em;
+            display: none;
+            margin-top: 8px;
+        }
+
+        .stop-btn-main.show {
+            display: block;
+        }
+
+        .stop-btn-main:hover {
+            background: rgba(255, 69, 58, .28);
+        }
+
+        /* MAIN */
+        .main {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        /* TAB BAR */
+        .tab-bar {
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            gap: 0;
+            border-bottom: 1px solid rgba(255, 255, 255, .04);
+            background: rgba(14, 14, 20, .95);
+            flex-shrink: 0;
+            height: 42px;
+        }
+
+        .tab {
+            padding: 0 20px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, .35);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all .15s;
+            user-select: none;
+        }
+
+        .tab:hover {
+            color: rgba(255, 255, 255, .65);
+        }
+
+        .tab.active {
+            color: var(--text);
+            border-bottom-color: #0a84ff;
+        }
+
+        .tab-live-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--t-green);
+            box-shadow: 0 0 6px var(--t-green);
+            animation: pulse 1.5s ease-in-out infinite;
+            display: none;
+        }
+
+        .tab-live-dot.show {
+            display: block;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .3
+            }
+        }
+
+        /* CONTENT */
+        .content {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .view {
+            flex: 1;
+            min-height: 0;
+            display: none;
+            flex-direction: column;
+        }
+
+        .view.active {
+            display: flex;
+        }
+
+        /* TERMINAL VIEW */
+        .terminal-view {
+            background: var(--t-bg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .terminal-view::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 50;
+            background: repeating-linear-gradient(0deg, transparent 0, transparent 3px, rgba(0, 0, 0, .13) 3px, rgba(0, 0, 0, .13) 4px);
+        }
+
+        .terminal-view::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: radial-gradient(ellipse 60% 45% at 15% 65%, rgba(0, 255, 136, .025) 0%, transparent 65%), radial-gradient(ellipse 40% 60% at 85% 25%, rgba(0, 212, 255, .015) 0%, transparent 65%);
+        }
+
+        .term-chrome {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 22px;
+            background: rgba(0, 0, 0, .7);
+            border-bottom: 1px solid rgba(0, 255, 136, .07);
+            z-index: 10;
+            position: relative;
+        }
+
+        .tc-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .tc-dot.r {
+            background: #ff5f57
+        }
+
+        .tc-dot.y {
+            background: #febc2e
+        }
+
+        .tc-dot.g {
+            background: #28c840
+        }
+
+        .tc-title {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: rgba(0, 255, 136, .42);
+            flex: 1;
+            letter-spacing: .1em;
+        }
+
+        .tc-pills {
+            display: flex;
+            gap: 14px;
+        }
+
+        .tc-pill {
+            font-family: var(--mono);
+            font-size: 9px;
+            color: rgba(0, 255, 136, .28);
+            letter-spacing: .08em;
+        }
+
+        .tc-pill span {
+            color: rgba(0, 255, 136, .6);
+            font-weight: 600;
+        }
+
+        .tc-clr {
+            font-family: var(--mono);
+            font-size: 9px;
+            color: rgba(0, 255, 136, .27);
+            cursor: pointer;
+            background: none;
+            border: 1px solid rgba(0, 255, 136, .1);
+            border-radius: 3px;
+            padding: 2px 8px;
+            transition: all .15s;
+            letter-spacing: .06em;
+        }
+
+        .tc-clr:hover {
+            color: var(--t-green);
+            border-color: rgba(0, 255, 136, .3);
+        }
+
+        #terminal {
+            flex: 1;
+            min-height: 0;
+            padding: 22px 32px 26px;
+            font-family: var(--mono);
+            font-size: 13.5px;
+            line-height: 2.05;
+            overflow-y: auto;
+            overflow-x: hidden;
+            color: var(--t-green);
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 0 9px rgba(0, 255, 136, .27), 0 0 2px rgba(0, 255, 136, .13);
+            word-break: break-all;
+        }
+
+        #terminal::-webkit-scrollbar {
+            width: 5px
+        }
+
+        #terminal::-webkit-scrollbar-track {
+            background: rgba(0, 255, 136, .02)
+        }
+
+        #terminal::-webkit-scrollbar-thumb {
+            background: rgba(0, 255, 136, .14);
+            border-radius: 5px
+        }
+
+        .t-g {
+            color: var(--t-green)
+        }
+
+        .t-c {
+            color: var(--t-cyan);
+            text-shadow: 0 0 9px rgba(0, 212, 255, .3)
+        }
+
+        .t-o {
+            color: var(--t-orange);
+            text-shadow: 0 0 9px rgba(255, 159, 46, .3)
+        }
+
+        .t-r {
+            color: var(--t-red);
+            text-shadow: 0 0 9px rgba(255, 68, 85, .35)
+        }
+
+        .t-y {
+            color: var(--t-yellow);
+            text-shadow: 0 0 9px rgba(255, 224, 102, .28)
+        }
+
+        .t-w {
+            color: rgba(255, 255, 255, .88);
+            text-shadow: none
+        }
+
+        .t-d {
+            color: rgba(0, 255, 136, .28);
+            text-shadow: none
+        }
+
+        .t-cursor {
+            display: inline-block;
+            width: 9px;
+            height: 16px;
+            background: var(--t-green);
+            vertical-align: text-bottom;
+            margin-left: 2px;
+            animation: blink 1.1s step-end infinite;
+            box-shadow: 0 0 9px var(--t-green), 0 0 20px rgba(0, 255, 136, .38);
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: 0
+            }
+        }
+
+        .prog-strip {
+            flex-shrink: 0;
+            padding: 9px 30px 12px;
+            background: rgba(0, 0, 0, .7);
+            border-top: 1px solid rgba(0, 255, 136, .07);
+            display: none;
+            z-index: 10;
+            position: relative;
+        }
+
+        .prog-strip.show {
+            display: block
+        }
+
+        .prog-lbl-row {
+            display: flex;
+            justify-content: space-between;
+            font-family: var(--mono);
+            font-size: 10px;
+            color: rgba(0, 255, 136, .42);
+            letter-spacing: .07em;
+            margin-bottom: 5px
+        }
+
+        .prog-lbl-row span:last-child {
+            color: var(--t-green);
+            font-weight: 600
+        }
+
+        .prog-bar {
+            height: 3px;
+            background: rgba(0, 255, 136, .07);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 3px
+        }
+
+        .prog-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 2px;
+            background: linear-gradient(90deg, var(--t-green2), var(--t-green), var(--t-cyan));
+            box-shadow: 0 0 10px rgba(0, 255, 136, .55);
+            transition: width .32s ease
+        }
+
+        .prog-fill.fake {
+            background: linear-gradient(90deg, rgba(0, 212, 255, .55), rgba(255, 159, 46, .65));
+            box-shadow: 0 0 8px rgba(0, 212, 255, .38)
+        }
+
+        /* ══ OVERVIEW VIEW ══ */
+        .overview-view {
+            background: var(--bg);
+            overflow-y: auto;
+            padding: 20px 32px 40px;
+        }
+
+        .overview-view::-webkit-scrollbar {
+            width: 4px
+        }
+
+        .overview-view::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, .08);
+            border-radius: 4px
+        }
+
+        /* hero row */
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .hero-card {
+            background: var(--bg2);
+            border: 1px solid var(--bdr);
+            border-radius: 16px;
+            padding: 24px 20px;
+            position: relative;
+            overflow: hidden;
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        .hero-card:hover {
+            border-color: rgba(255, 255, 255, .1);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, .35);
+        }
+
+        .hero-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+        }
+
+        .hero-card.hc-blue::before {
+            background: linear-gradient(90deg, transparent, rgba(10, 132, 255, .55), transparent);
+        }
+
+        .hero-card.hc-green::before {
+            background: linear-gradient(90deg, transparent, rgba(48, 209, 88, .55), transparent);
+        }
+
+        .hero-card.hc-orange::before {
+            background: linear-gradient(90deg, transparent, rgba(255, 159, 10, .55), transparent);
+        }
+
+        .hero-card.hc-white::before {
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .2), transparent);
+        }
+
+        .hc-icon {
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+
+        .hc-lbl {
+            font-size: 11px;
+            color: rgba(255, 255, 255, .32);
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            margin-bottom: 7px;
+        }
+
+        .hc-val {
+            font-size: 40px;
+            font-weight: 300;
+            letter-spacing: -.03em;
+            line-height: 1;
+        }
+
+        .hc-val.blue {
+            color: #0a84ff;
+        }
+
+        .hc-val.green {
+            color: #30d158;
+        }
+
+        .hc-val.orange {
+            color: #ff9f0a;
+        }
+
+        .hc-val.white {
+            color: rgba(255, 255, 255, .72);
+        }
+
+        .hc-sub {
+            font-size: 11px;
+            color: rgba(255, 255, 255, .22);
+            margin-top: 7px;
+        }
+
+        /* section card */
+        .ov-sec {
+            background: var(--bg2);
+            border: 1px solid var(--bdr);
+            border-radius: 14px;
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+
+        .ov-sec-head {
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, .04);
+        }
+
+        .sec-ic {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+        }
+
+        .si-blue {
+            background: rgba(10, 132, 255, .15)
+        }
+
+        .si-orange {
+            background: rgba(255, 149, 10, .15)
+        }
+
+        .si-green {
+            background: rgba(48, 209, 88, .12)
+        }
+
+        .si-red {
+            background: rgba(255, 69, 58, .15)
+        }
+
+        .si-white {
+            background: rgba(255, 255, 255, .07)
+        }
+
+        .ov-sec-title {
+            font-size: 14px;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .ov-sec-meta {
+            font-size: 11px;
+            color: rgba(255, 255, 255, .3);
+        }
+
+        /* file rows */
+        .file-row {
+            display: flex;
+            align-items: center;
+            padding: 9px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, .03);
+            gap: 10px;
+            transition: background .1s;
+        }
+
+        .file-row:hover {
+            background: rgba(255, 255, 255, .03)
+        }
+
+        .file-row:last-child {
+            border-bottom: none
+        }
+
+        .file-row.sel {
+            background: rgba(255, 69, 58, .05);
+            border-left: 2px solid rgba(255, 69, 58, .4)
+        }
+
+        .row-chk {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            border: 1px solid rgba(255, 255, 255, .2);
+            background: transparent;
+            cursor: pointer;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            transition: all .15s;
+            color: #30d158;
+        }
+
+        .row-chk.on {
+            background: rgba(255, 69, 58, .2);
+            border-color: #ff453a;
+            color: #ff453a
+        }
+
+        .f-icon {
+            font-size: 14px;
+            flex-shrink: 0
+        }
+
+        .f-name {
+            flex: 1;
+            font-size: 11px;
+            color: rgba(255, 255, 255, .6);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-family: 'SF Mono', 'Fira Code', monospace
+        }
+
+        .f-size {
+            font-size: 11px;
+            color: rgba(255, 255, 255, .3);
+            min-width: 65px;
+            text-align: right
+        }
+
+        .f-date {
+            font-size: 11px;
+            color: rgba(255, 255, 255, .22);
+            min-width: 90px;
+            text-align: right
+        }
+
+        .f-type {
+            font-size: 10px;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-weight: 600;
+            min-width: 50px;
+            text-align: center;
+            flex-shrink: 0
+        }
+
+        .ft-img {
+            background: rgba(48, 209, 88, .12);
+            color: #30d158
+        }
+
+        .ft-exe {
+            background: rgba(255, 69, 58, .15);
+            color: #ff453a
+        }
+
+        .ft-doc {
+            background: rgba(255, 149, 10, .15);
+            color: #ff9f0a
+        }
+
+        .ft-zip {
+            background: rgba(255, 255, 255, .1);
+            color: rgba(255, 255, 255, .6)
+        }
+
+        .ft-sys {
+            background: rgba(255, 69, 58, .1);
+            color: rgba(255, 69, 58, .7)
+        }
+
+        .ft-fnt {
+            background: rgba(10, 132, 255, .15);
+            color: #0a84ff
+        }
+
+        .ft-key {
+            background: rgba(255, 69, 58, .2);
+            color: #ff453a
+        }
+
+        .ft-oth {
+            background: rgba(255, 255, 255, .07);
+            color: rgba(255, 255, 255, .4)
+        }
+
+        .del-btn {
+            background: rgba(255, 69, 58, .15);
+            color: #ff453a;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity .2s
+        }
+
+        .file-row:hover .del-btn {
+            opacity: 1
+        }
+
+        .del-btn:hover {
+            background: rgba(255, 69, 58, .3)
+        }
+
+        /* bulk bar */
+        .bulk-bar {
+            padding: 8px 18px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, .04);
+            background: rgba(255, 69, 58, .04)
+        }
+
+        .bulk-bar.show {
+            display: flex
+        }
+
+        .bulk-lbl {
+            font-size: 11px;
+            color: #ff453a;
+            flex: 1
+        }
+
+        .bulk-del {
+            background: rgba(255, 69, 58, .2);
+            border: 1px solid rgba(255, 69, 58, .35);
+            border-radius: 6px;
+            padding: 5px 12px;
+            color: #ff453a;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s
+        }
+
+        .bulk-del:hover {
+            background: rgba(255, 69, 58, .35)
+        }
+
+        .bulk-clr {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, .12);
+            border-radius: 6px;
+            padding: 5px 9px;
+            color: rgba(255, 255, 255, .4);
+            font-size: 11px;
+            cursor: pointer;
+            transition: all .2s
+        }
+
+        .bulk-clr:hover {
+            border-color: rgba(255, 255, 255, .25);
+            color: rgba(255, 255, 255, .6)
+        }
+
+        /* dup groups */
+        .dup-grp {
+            padding: 10px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, .03)
+        }
+
+        .dup-grp:last-child {
+            border-bottom: none
+        }
+
+        .dup-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, .4)
+        }
+
+        .dup-nm {
+            color: rgba(255, 255, 255, .6);
+            font-weight: 500
+        }
+
+        .waste-tag {
+            background: rgba(255, 149, 10, .15);
+            color: #ff9f0a;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-weight: 500
+        }
+
+        .dup-path {
+            font-size: 10.5px;
+            color: rgba(255, 255, 255, .35);
+            padding: 1.5px 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-family: 'SF Mono', 'Fira Code', monospace
+        }
+
+        .empty {
+            padding: 28px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, .2);
+            text-align: center
+        }
+
+        /* clear panel */
+        .clear-note {
+            font-size: 11px;
+            color: rgba(255, 255, 255, .3);
+            padding: 14px 18px 6px;
+            line-height: 1.65
+        }
+
+        .clear-opts-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 8px 18px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, .04)
+        }
+
+        .clear-opt {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(255, 69, 58, .07);
+            border: 1px solid rgba(255, 69, 58, .18);
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 11px;
+            color: rgba(255, 255, 255, .45);
+            transition: all .18s;
+            user-select: none
+        }
+
+        .clear-opt.on {
+            background: rgba(255, 69, 58, .18);
+            border-color: rgba(255, 69, 58, .35);
+            color: #ff453a
+        }
+
+        .co-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: rgba(255, 69, 58, .28);
+            flex-shrink: 0;
+            transition: background .18s
+        }
+
+        .clear-opt.on .co-dot {
+            background: #ff453a;
+            box-shadow: 0 0 5px #ff453a
+        }
+
+        .clear-run-btn {
+            margin: 14px 18px;
+            background: rgba(255, 69, 58, .15);
+            border: 1px solid rgba(255, 69, 58, .3);
+            border-radius: 9px;
+            padding: 10px 18px;
+            color: #ff453a;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s;
+            display: block
+        }
+
+        .clear-run-btn:hover {
+            background: rgba(255, 69, 58, .27);
+            box-shadow: 0 0 14px rgba(255, 69, 58, .2)
+        }
+
+        /* MODAL */
+        .modal-bg {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .78);
+            z-index: 99999;
+            display: none;
+            align-items: center;
+            justify-content: center
+        }
+
+        .modal-bg.open {
+            display: flex
+        }
+
+        .modal {
+            background: var(--bg2);
+            border: 1px solid rgba(255, 69, 58, .35);
+            border-radius: 14px;
+            padding: 24px;
+            width: 420px;
+            box-shadow: 0 0 50px rgba(255, 69, 58, .14), 0 24px 64px rgba(0, 0, 0, .7)
+        }
+
+        .modal-ttl {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ff453a;
+            margin-bottom: 10px
+        }
+
+        .modal-body {
+            font-size: 13px;
+            color: rgba(255, 255, 255, .5);
+            line-height: 1.65;
+            margin-bottom: 14px
+        }
+
+        .modal-path {
+            background: rgba(255, 69, 58, .06);
+            border: 1px solid rgba(255, 69, 58, .15);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 11px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            color: rgba(255, 69, 58, .7);
+            margin-bottom: 16px;
+            word-break: break-all;
+            max-height: 80px;
+            overflow-y: auto
+        }
+
+        .modal-path::-webkit-scrollbar {
+            width: 3px
+        }
+
+        .modal-btns {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end
+        }
+
+        .m-cancel {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, .15);
+            border-radius: 8px;
+            padding: 7px 16px;
+            color: rgba(255, 255, 255, .55);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all .2s
+        }
+
+        .m-cancel:hover {
+            border-color: rgba(255, 255, 255, .28);
+            color: rgba(255, 255, 255, .7)
+        }
+
+        .m-confirm {
+            background: rgba(255, 69, 58, .2);
+            border: 1px solid rgba(255, 69, 58, .4);
+            border-radius: 8px;
+            padding: 7px 18px;
+            color: #ff453a;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s
+        }
+
+        .m-confirm:hover {
+            background: rgba(255, 69, 58, .35);
+            box-shadow: 0 0 14px rgba(255, 69, 58, .22)
+        }
+
+        #folderPicker {
+            display: none
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Modal -->
+    <div id="modalBg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;">
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:450px;width:90%">
+            <div style="font-size:18px;font-weight:600;color:var(--red);margin-bottom:12px">⚠️ Confirm Deletion</div>
+            <div style="color:var(--text2);margin-bottom:16px">ByteSweep will permanently delete these file(s). <strong style="color:var(--red)">This cannot be undone.</strong></div>
+            <div id="modalPath" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:11px;color:var(--text2);font-family:var(--mono);max-height:120px;overflow-y:auto;margin-bottom:16px;word-break:break-all"></div>
+            <div style="display:flex;gap:10px;justify-content:flex-end">
+                <button onclick="closeModal()" style="padding:10px 20px;border:1px solid var(--border);border-radius:8px;background:var(--bg3);color:var(--text);cursor:pointer;font-size:13px;font-weight:500">Cancel</button>
+                <button onclick="confirmDelete()" style="padding:10px 20px;border:none;border-radius:8px;background:var(--red);color:white;cursor:pointer;font-size:13px;font-weight:600">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Bar -->
+    <div class="topbar">
+        <div class="topbar-logo">
+            <img src="/static/logo.png" alt="Logo" onerror="this.style.display='none'" />
+            <span class="topbar-brand">ByteSweep</span>
+        </div>
+        <div class="topbar-nav">
+            <div class="topbar-nav-item active" id="nav-scan" onclick="switchView('scan')">🔍 Scanner</div>
+            <div class="topbar-nav-item" id="nav-log" onclick="switchView('log')">📝 Log</div>
+            <div class="topbar-nav-item" id="nav-results" onclick="switchView('results')">📊 Results</div>
+        </div>
+        <div class="topbar-status">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">Ready</span>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sb-section">
+                <div class="sb-label">📂 Select Location</div>
+                <div class="loc-grid" id="locBar">
+                    <div style="color:var(--text3);font-size:12px;padding:10px;text-align:center">Loading...</div>
+                </div>
+            </div>
+
+            <div class="sb-section">
+                <div class="sb-label">⚙️ Settings</div>
+                <div class="settings-row">
+                    <label>Path:</label>
+                    <input type="text" class="settings-input" id="folderPath" placeholder="Select or enter path" />
+                </div>
+                <div class="settings-row">
+                    <label>Large &gt;</label>
+                    <input type="number" class="settings-input" id="sizeLimit" value="10" min="1" style="width:70px" />
+                    <span style="color:var(--text3);font-size:12px">MB</span>
+                </div>
+            </div>
+
+            <div class="sb-section" style="margin-top:auto">
+                <button class="btn btn-success" id="scanAllBtn" onclick="startScanAll()">🚀 Scan All Drives</button>
+                <button class="btn btn-primary" id="scanBtn" onclick="startScan()" style="margin-top:8px">🔍 Scan Selected</button>
+                <button class="btn btn-danger" id="stopBtn" onclick="stopScan()" style="margin-top:8px;display:none">⏹ Stop Scan</button>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Scanner View -->
+            <div id="view-scan" style="display:none" class="view-content">
+                <!-- Live Terminal Mini View -->
+                <div class="mini-terminal" id="miniTerminal">
+                    <div class="mini-term-header">
+                        <span>📍 Live Scan Progress - Files: <span id="liveCount2">0</span></span>
+                    </div>
+                    <div class="mini-term-content" id="miniTermContent">
+                        <div class="term-line"><span class="term-prompt">$</span> Waiting for scan...</div>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card blue">
+                        <div class="stat-icon">📁</div>
+                        <div class="stat-value" id="sTotal">0</div>
+                        <div class="stat-label">Files Scanned</div>
+                    </div>
+                    <div class="stat-card orange">
+                        <div class="stat-icon">🔁</div>
+                        <div class="stat-value" id="sDups">0</div>
+                        <div class="stat-label">Duplicates</div>
+                    </div>
+                    <div class="stat-card green">
+                        <div class="stat-icon">💾</div>
+                        <div class="stat-value" id="sWaste">0 MB</div>
+                        <div class="stat-label">Recoverable</div>
+                    </div>
+                    <div class="stat-card red">
+                        <div class="stat-icon">📦</div>
+                        <div class="stat-value" id="sSize">0 MB</div>
+                        <div class="stat-label">Total Size</div>
+                    </div>
+                </div>
+
+                <div class="progress-section" id="progressSection" style="display:none">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progFill" style="width:0%"></div>
+                    </div>
+                    <div class="progress-info">
+                        <span id="progLabel">Initializing...</span>
+                        <span id="progPct">0%</span>
+                    </div>
+                </div>
+
+                <div class="data-sections">
+                    <!-- Duplicates -->
+                    <div class="data-section">
+                        <div class="section-header">
+                            <div class="section-title">
+                                <div class="section-icon orange">🔁</div>
+                                Duplicates
+                            </div>
+                            <span class="section-count" id="dupMeta">0 groups</span>
+                        </div>
+                        <div class="section-content" id="dupContent">
+                            <div class="empty-state">Scan to find duplicates</div>
+                        </div>
+                    </div>
+
+                    <!-- Large Files -->
+                    <div class="data-section">
+                        <div class="section-header">
+                            <div class="section-title">
+                                <div class="section-icon blue">📦</div>
+                                Large Files
+                            </div>
+                            <span class="section-count" id="lgMeta">0 files</span>
+                        </div>
+                        <div class="section-content" id="lgContent">
+                            <div class="empty-state">Scan to find large files</div>
+                        </div>
+                    </div>
+
+                    <!-- Unused Files -->
+                    <div class="data-section">
+                        <div class="section-header">
+                            <div class="section-title">
+                                <div class="section-icon green">🕐</div>
+                                Unused Files
+                            </div>
+                            <span class="section-count" id="unMeta">0 files</span>
+                        </div>
+                        <div class="section-content" id="unContent">
+                            <div class="empty-state">Scan to find unused files</div>
+                        </div>
+                    </div>
+
+                    <!-- File Types -->
+                    <div class="data-section">
+                        <div class="section-header">
+                            <div class="section-title">
+                                <div class="section-icon red">📊</div>
+                                File Types
+                            </div>
+                            <span class="section-count" id="typeMeta">0 types</span>
+                        </div>
+                        <div class="section-content" id="typeContent">
+                            <div class="empty-state">Scan to see file types</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Log View -->
+            <div id="view-log" class="view-content" style="display:none">
+                <div class="log-header">
+                    <span>📝 Live Terminal - Files Scanned: <span id="liveCount">0</span></span>
+                    <button onclick="clearLog()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:6px 12px;border-radius:6px;cursor:pointer">Clear</button>
+                </div>
+                <div class="terminal-view">
+                    <div class="terminal-content" id="terminalContent">
+                        <div class="term-line"><span class="term-prompt">$</span> ByteSweep initialized</div>
+                        <div class="term-line"><span class="term-prompt">$</span> Ready to scan files...</div>
+                        <div class="term-cursor"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let es = null, stopped = false, scanData = null;
+        let selectedLocation = null;
+        let locations = [];
+        let fileCount = 0;
+
+        function switchView(name) {
+            document.querySelectorAll('.topbar-nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById('nav-' + name)?.classList.add('active');
+            document.getElementById('view-scan').style.display = name === 'scan' ? 'block' : 'none';
+            document.getElementById('view-log').style.display = name === 'log' ? 'block' : 'none';
+        }
+
+        function setStatus(live, text) {
+            document.getElementById('statusDot').classList.toggle('live', live);
+            document.getElementById('statusText').textContent = text;
+        }
+
+        function termLog(msg, type = '', dest = 'full') {
+            // Update full terminal
+            const term = document.getElementById('terminalContent');
+            const cursor = term.querySelector('.term-cursor');
+            if (cursor) cursor.remove();
+            
+            const line = document.createElement('div');
+            line.className = 'term-line';
+            if (type === 'info') line.innerHTML = `<span class="term-prompt">></span><span class="term-info">${escapeHtml(msg)}</span>`;
+            else if (type === 'warn') line.innerHTML = `<span class="term-prompt">!</span><span class="term-warn">${escapeHtml(msg)}</span>`;
+            else if (type === 'error') line.innerHTML = `<span class="term-prompt">✗</span><span class="term-error">${escapeHtml(msg)}</span>`;
+            else if (type === 'success') line.innerHTML = `<span class="term-prompt">✓</span><span class="term-success">${escapeHtml(msg)}</span>`;
+            else line.innerHTML = `<span class="term-prompt">$</span> ${escapeHtml(msg)}`;
+            
+            term.appendChild(line);
+            
+            const newCursor = document.createElement('div');
+            newCursor.className = 'term-cursor';
+            term.appendChild(newCursor);
+            
+            term.scrollTop = term.scrollHeight;
+
+            // Also update mini terminal if scanning
+            if (dest !== 'full' || type === 'info') {
+                const mini = document.getElementById('miniTermContent');
+                const miniLine = document.createElement('div');
+                miniLine.className = 'term-line';
+                if (type === 'info') miniLine.innerHTML = `<span class="term-prompt">></span>${escapeHtml(msg)}`;
+                else if (type === 'success') miniLine.innerHTML = `<span class="term-prompt">✓</span>${escapeHtml(msg)}`;
+                else miniLine.innerHTML = `<span class="term-prompt">$</span> ${escapeHtml(msg)}`;
+                mini.appendChild(miniLine);
+                mini.scrollTop = mini.scrollHeight;
+                
+                // Keep only last 20 lines in mini terminal
+                while (mini.children.length > 20) {
+                    mini.removeChild(mini.firstChild);
+                }
+            }
+        }
+
+        function updateLiveCount(count) {
+            fileCount = count;
+            document.getElementById('liveCount').textContent = count.toLocaleString();
+            document.getElementById('liveCount2').textContent = count.toLocaleString();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function clearLog() {
+            const term = document.getElementById('terminalContent');
+            term.innerHTML = '<div class="term-line"><span class="term-prompt">$</span> Terminal cleared</div><div class="term-cursor"></div>';
+            const mini = document.getElementById('miniTermContent');
+            mini.innerHTML = '<div class="term-line"><span class="term-prompt">$</span> Terminal cleared</div>';
+            fileCount = 0;
+            document.getElementById('liveCount').textContent = '0';
+            document.getElementById('liveCount2').textContent = '0';
+        }
+
+        function fmtSz(mb) { 
+            if (mb >= 1024) return (mb / 1024).toFixed(2) + ' GB'; 
+            if (mb >= 1) return mb.toFixed(2) + ' MB'; 
+            return (mb * 1024).toFixed(0) + ' KB'; 
+        }
+
+        function fmtDate(ts) { 
+            return new Date(ts * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }); 
+        }
+
+        async function loadLocations() {
+            const locBar = document.getElementById('locBar');
+            termLog('Detecting drives and folders...', 'info');
+            try {
+                const resp = await fetch('/locations');
+                const data = await resp.json();
+                locations = data.locations || [];
+                locBar.innerHTML = '';
+                
+                if (locations.length === 0) {
+                    locBar.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:10px">No locations found</div>';
+                    termLog('No drives or folders detected', 'warn');
+                    return;
+                }
+                
+                locations.forEach((loc, idx) => {
+                    const icon = loc.type === 'drive' ? '💾' : '📁';
+                    const item = document.createElement('div');
+                    item.className = 'loc-card';
+                    item.dataset.idx = idx;
+                    item.innerHTML = `<span class="loc-icon">${icon}</span><div class="loc-info"><div class="loc-name">${loc.name}</div><div class="loc-path">${loc.path}</div></div>`;
+                    item.onclick = () => selectLocation(idx);
+                    locBar.appendChild(item);
+                });
+                termLog(`Found ${locations.length} locations:`, 'success');
+                locations.forEach(loc => termLog(`  ${loc.type === 'drive' ? '💾' : '📁'} ${loc.path}`, 'info'));
+            } catch (e) {
+                locBar.innerHTML = '<div style="color:var(--red);font-size:12px;padding:10px">Failed to load locations</div>';
+                termLog('ERROR: Could not detect drives', 'error');
+            }
+        }
+
+        function selectLocation(idx) {
+            document.querySelectorAll('.loc-card').forEach((el, i) => {
+                el.classList.toggle('selected', i === idx);
+            });
+            const loc = locations[idx];
+            selectedLocation = loc.path;
+            document.getElementById('folderPath').value = loc.path;
+            termLog(`Selected: ${loc.path}`, 'info');
+        }
+
+        // Scan functions
+        function startScanAll() {
+            const size = document.getElementById('sizeLimit').value || 10;
+            termLog('Starting FULL SYSTEM SCAN...', 'info');
+            runScan(null, size, true);
+        }
+
+        function startScan() {
+            const folder = document.getElementById('folderPath').value.trim();
+            const size = document.getElementById('sizeLimit').value || 10;
+            if (!folder) {
+                termLog('ERROR: No location selected!', 'error');
+                switchView('log');
+                return;
+            }
+            termLog(`Scanning: ${folder}`, 'info');
+            runScan(folder, size, false);
+        }
+
+        function runScan(folder, size, scanAll) {
+            stopped = false;
+            fileCount = 0;
+            updateLiveCount(0);
+            document.getElementById('scanBtn').disabled = true;
+            document.getElementById('scanAllBtn').disabled = true;
+            document.getElementById('stopBtn').style.display = 'block';
+            document.getElementById('progressSection').style.display = 'block';
+            document.getElementById('progFill').style.width = '0%';
+            setStatus(true, 'Scanning...');
+            
+            // Clear mini terminal
+            const mini = document.getElementById('miniTermContent');
+            mini.innerHTML = '<div class="term-line"><span class="term-prompt">$</span> Starting scan...</div>';
+
+            const url = `/scan?folder=${encodeURIComponent(folder || '')}&size_limit=${size}&scan_all=${scanAll}`;
+            if (es) es.close();
+            es = new EventSource(url);
+
+            es.onmessage = function(ev) {
+                if (stopped) { es.close(); return; }
+                const data = JSON.parse(ev.data);
+                if (data.type === 'status') {
+                    document.getElementById('progLabel').textContent = data.msg;
+                    termLog(data.msg);
+                } else if (data.type === 'file') {
+                    fileCount++;
+                    updateLiveCount(fileCount);
+                    // Show every 100th file in mini terminal
+                    if (fileCount % 100 === 0) {
+                        termLog(`Scanned: ${data.path}`, 'info', 'mini');
+                    }
+                } else if (data.type === 'progress') {
+                    const pct = Math.round((data.current / data.total) * 100);
+                    document.getElementById('progFill').style.width = pct + '%';
+                    document.getElementById('progPct').textContent = pct + '%';
+                    document.getElementById('progLabel').textContent = `${data.current.toLocaleString()} / ${data.total.toLocaleString()} files`;
+                } else if (data.type === 'complete') {
+                    es.close();
+                    document.getElementById('progFill').style.width = '100%';
+                    document.getElementById('scanBtn').disabled = false;
+                    document.getElementById('scanAllBtn').disabled = false;
+                    document.getElementById('stopBtn').style.display = 'none';
+                    setStatus(false, 'Scan Complete');
+                    termLog('═══════════════════════════════════════', 'success');
+                    termLog(`SCAN COMPLETE!`, 'success');
+                    termLog(`Total files: ${data.total_files.toLocaleString()}`, 'success');
+                    termLog(`Total size: ${fmtSz(data.total_size_mb)}`, 'success');
+                    termLog(`Duplicates: ${data.duplicates.length} groups`, 'warn');
+                    termLog(`Large files: ${data.large_files.length}`, 'info');
+                    termLog(`Unused files: ${data.unused_files.length}`, 'info');
+                    termLog('═══════════════════════════════════════', 'success');
+                    scanData = data;
+                    renderResults(data);
+                }
+            };
+
+            es.onerror = function() {
+                if (stopped) return;
+                es.close();
+                setStatus(false, 'Error');
+                termLog('CONNECTION ERROR - Scan interrupted', 'error');
+                document.getElementById('scanBtn').disabled = false;
+                document.getElementById('scanAllBtn').disabled = false;
+                document.getElementById('stopBtn').style.display = 'none';
+            };
+        }
+
+        function stopScan() {
+            stopped = true;
+            if (es) es.close();
+            setStatus(false, 'Stopped');
+            log('Scan stopped by user', 'warning');
+            document.getElementById('scanBtn').disabled = false;
+            document.getElementById('scanAllBtn').disabled = false;
+            document.getElementById('stopBtn').style.display = 'none';
+        }
+
+        function renderResults(d) {
+            document.getElementById('sTotal').textContent = d.total_files.toLocaleString();
+            document.getElementById('sDups').textContent = d.duplicates.length;
+            document.getElementById('sWaste').textContent = fmtSz(d.dup_waste_mb);
+            document.getElementById('sSize').textContent = fmtSz(d.total_size_mb);
+
+            // Duplicates
+            document.getElementById('dupMeta').textContent = d.duplicates.length + ' groups';
+            document.getElementById('dupContent').innerHTML = d.duplicates.length ?
+                d.duplicates.slice(0, 10).map(g => {
+                    const w = g[0].size_mb * (g.length - 1);
+                    return `<div class="file-row"><span class="file-name" title="${g[0].path}">${g[0].name}</span><span class="file-size">${g.length}x · ${fmtSz(w)}</span></div>`;
+                }).join('') : '<div class="empty-state">No duplicates found</div>';
+
+            // Large files
+            document.getElementById('lgMeta').textContent = d.large_files.length + ' files';
+            document.getElementById('lgContent').innerHTML = d.large_files.length ?
+                d.large_files.slice(0, 10).map(f => `<div class="file-row"><span class="file-name" title="${f.path}">${f.path}</span><span class="file-size">${fmtSz(f.size_mb)}</span><button class="file-action" onclick="askDelete('${f.path.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}')">Delete</button></div>`).join('') : '<div class="empty-state">No large files found</div>';
+
+            // Unused files
+            document.getElementById('unMeta').textContent = d.unused_files.length + ' files';
+            document.getElementById('unContent').innerHTML = d.unused_files.length ?
+                d.unused_files.slice(0, 10).map(f => `<div class="file-row"><span class="file-name" title="${f.path}">${f.name}</span><span class="file-size">${fmtDate(f.last_accessed)}</span><button class="file-action" onclick="askDelete('${f.path.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}')">Delete</button></div>`).join('') : '<div class="empty-state">No unused files found</div>';
+
+            // File types
+            const types = d.file_types || {};
+            const sorted = Object.entries(types).sort((a, b) => b[1].count - a[1].count);
+            document.getElementById('typeMeta').textContent = sorted.length + ' types';
+            document.getElementById('typeContent').innerHTML = sorted.length ?
+                sorted.slice(0, 15).map(([ext, data]) => `<div class="file-row"><span class="file-name">.${ext.toUpperCase()}</span><span class="file-size">${data.count} files · ${fmtSz(data.size_mb)}</span></div>`).join('') : '<div class="empty-state">No file types found</div>';
+        }
+
+        function askDelete(path) {
+            document.getElementById('modalBg').style.display = 'flex';
+            document.getElementById('modalPath').textContent = path;
+            document.getElementById('modalPath').dataset.path = path;
+        }
+
+        function closeModal() {
+            document.getElementById('modalBg').style.display = 'none';
+        }
+
+        async function confirmDelete() {
+            const path = document.getElementById('modalPath').dataset.path;
+            closeModal();
+            termLog(`DELETING: ${path}`, 'warn');
+            try {
+                const resp = await fetch('/delete', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({path: path})
+                });
+                const result = await resp.json();
+                if (result.success) {
+                    termLog(`DELETED: ${path}`, 'success');
+                    switchView('log');
+                } else {
+                    termLog(`DELETE FAILED: ${result.error}`, 'error');
+                }
+            } catch (e) {
+                termLog(`ERROR: ${e.message}`, 'error');
+            }
+        }
+
+        // Init
+        window.onload = function() {
+            loadLocations();
+            switchView('scan');
+        };
+    </script>
+</body>
+
+</html>

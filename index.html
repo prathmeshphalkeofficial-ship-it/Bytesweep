@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ByteSweep - Neural Scanner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0f;
+            min-height: 100vh;
+            color: #fff;
+            font-family: 'Share Tech Mono', monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function App() {
+            const [tab, setTab] = useState('scanner');
+
+            return (
+                <div style={{ minHeight: '100vh', background: '#0a0a0f', padding: 20 }}>
+                    <nav style={{ display: 'flex', gap: 10, marginBottom: 20, padding: 10, background: 'rgba(20,20,30,0.8)', borderRadius: 8 }}>
+                        <button onClick={() => setTab('scanner')} style={{ padding: '10px 20px', background: tab === 'scanner' ? '#00fff7' : '#333', color: '#000', border: 'none', borderRadius: 4, cursor: 'pointer', fontFamily: 'Orbitron' }}>SCANNER</button>
+                        <button onClick={() => setTab('terminal')} style={{ padding: '10px 20px', background: tab === 'terminal' ? '#00fff7' : '#333', color: '#000', border: 'none', borderRadius: 4, cursor: 'pointer', fontFamily: 'Orbitron' }}>TERMINAL</button>
+                        <button onClick={() => setTab('results')} style={{ padding: '10px 20px', background: tab === 'results' ? '#bf00ff' : '#333', color: '#000', border: 'none', borderRadius: 4, cursor: 'pointer', fontFamily: 'Orbitron' }}>RESULTS</button>
+                        <button onClick={() => setTab('settings')} style={{ padding: '10px 20px', background: tab === 'settings' ? '#00fff7' : '#333', color: '#000', border: 'none', borderRadius: 4, cursor: 'pointer', fontFamily: 'Orbitron' }}>SETTINGS</button>
+                    </nav>
+
+                    {tab === 'scanner' && (
+                        <div>
+                            <h1 style={{ color: '#00fff7', fontFamily: 'Orbitron' }}>SCANNER PANEL</h1>
+                            <p>Scanner content here...</p>
+                        </div>
+                    )}
+
+                    {tab === 'terminal' && (
+                        <div>
+                            <h1 style={{ color: '#00ff88', fontFamily: 'Orbitron' }}>TERMINAL PANEL</h1>
+                            <p>Terminal content here...</p>
+                        </div>
+                    )}
+
+                    {tab === 'results' && (
+                        <div>
+                            <h1 style={{ color: '#bf00ff', fontFamily: 'Orbitron' }}>RESULTS PANEL</h1>
+                            <p>Results content here...</p>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20, marginTop: 20 }}>
+                                <div style={{ padding: 20, background: 'rgba(20,20,30,0.8)', borderRadius: 8, border: '1px solid #bf00ff' }}>
+                                    <h2 style={{ fontFamily: 'Orbitron', color: '#bf00ff', marginBottom: 16 }}>QUICK ACTIONS</h2>
+                                    <button style={{ display: 'block', width: '100%', padding: 12, marginBottom: 8, background: 'rgba(0,255,247,0.1)', border: '1px solid #00fff7', borderRadius: 4, color: '#00fff7', cursor: 'pointer' }}>🗑️ Clean Duplicates</button>
+                                    <button style={{ display: 'block', width: '100%', padding: 12, marginBottom: 8, background: 'rgba(191,0,255,0.1)', border: '1px solid #bf00ff', borderRadius: 4, color: '#bf00ff', cursor: 'pointer' }}>📦 Archive Large Files</button>
+                                    <button style={{ display: 'block', width: '100%', padding: 12, marginBottom: 8, background: 'rgba(0,255,136,0.1)', border: '1px solid #00ff88', borderRadius: 4, color: '#00ff88', cursor: 'pointer' }}>🕐 Remove Old Files</button>
+                                    <button style={{ display: 'block', width: '100%', padding: 12, background: 'rgba(255,170,0,0.1)', border: '1px solid #ffaa00', borderRadius: 4, color: '#ffaa00', cursor: 'pointer' }}>💾 Move to SSD</button>
+                                </div>
+                                <div style={{ padding: 20, background: 'rgba(20,20,30,0.8)', borderRadius: 8, border: '1px solid #00fff7' }}>
+                                    <h2 style={{ fontFamily: 'Orbitron', color: '#00fff7', marginBottom: 16 }}>STORAGE ANALYSIS</h2>
+                                    <div style={{ display: 'flex', height: 40, borderRadius: 6, overflow: 'hidden', marginBottom: 16 }}>
+                                        <div style={{ width: '45%', background: 'linear-gradient(90deg, #00fff7, #0088ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11 }}>Media 45%</div>
+                                        <div style={{ width: '20%', background: 'linear-gradient(90deg, #bf00ff, #ff00ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11 }}>Apps 20%</div>
+                                        <div style={{ width: '15%', background: '#00ff88', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11 }}>Docs</div>
+                                        <div style={{ width: '10%', background: '#ffaa00', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11 }}>Other</div>
+                                        <div style={{ width: '10%', background: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#666' }}>Free</div>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+                                        <div style={{ textAlign: 'center', padding: 12, background: 'rgba(255,255,255,0.05)', borderRadius: 6 }}>
+                                            <div style={{ fontSize: 10, color: '#666', marginBottom: 4 }}>Used</div>
+                                            <div style={{ fontFamily: 'Orbitron', fontSize: 16, color: '#00fff7' }}>234.5 GB</div>
+                                        </div>
+                                        <div style={{ textAlign: 'center', padding: 12, background: 'rgba(255,255,255,0.05)', borderRadius: 6 }}>
+                                            <div style={{ fontSize: 10, color: '#666', marginBottom: 4 }}>Free</div>
+                                            <div style={{ fontFamily: 'Orbitron', fontSize: 16, color: '#00ff88' }}>489.2 GB</div>
+                                        </div>
+                                        <div style={{ textAlign: 'center', padding: 12, background: 'rgba(255,255,255,0.05)', borderRadius: 6 }}>
+                                            <div style={{ fontSize: 10, color: '#666', marginBottom: 4 }}>Total</div>
+                                            <div style={{ fontFamily: 'Orbitron', fontSize: 16, color: '#bf00ff' }}>723.7 GB</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {tab === 'settings' && (
+                        <div>
+                            <h1 style={{ color: '#00fff7', fontFamily: 'Orbitron' }}>SETTINGS PANEL</h1>
+                            <p>Settings content here...</p>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+
+</html>
