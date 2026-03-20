@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 
 const ByteSweepScanner = () => {
   const [isScanning, setIsScanning] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
   const [terminalLines, setTerminalLines] = useState([
     { time: '00:00:00', text: '> BYTESWEEP v4.0 INITIALIZED', type: 'info' },
@@ -146,57 +147,65 @@ const ByteSweepScanner = () => {
         <div style={{ ...styles.gridOverlay }} />
       </div>
 
-      <nav style={styles.navbar}>
-        <div style={styles.logo}>
-          <div style={styles.logoIcon}>⚡</div>
-          <div>
-            <div style={styles.logoText}>BYTESWEEP</div>
-            <div style={styles.logoSub}>NEURAL SCANNER v4.0</div>
+      <nav className="flex items-center justify-between md:justify-start md:px-6 px-3 h-14 md:h-[70px] bg-[rgba(10,10,15,0.95)] backdrop-blur-xl border-b border-[rgba(0,255,247,0.2)] relative z-100">
+        <div className="flex items-center gap-3">
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden p-2 text-[#00fff7] hover:bg-[rgba(0,255,247,0.1)] rounded-lg transition-colors">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <div className="w-10 h-10 md:w-11 md:h-11 bg-gradient-to-br from-[#00fff7] to-[#0088ff] rounded-lg md:rounded-[10px] flex items-center justify-content-center text-lg md:text-[22px] shadow-[0_0_20px_rgba(0,255,247,0.4),0_0_40px_rgba(0,255,247,0.2)]">⚡</div>
+          <div className="hidden sm:block">
+            <div className="font-['Orbitron'] text-sm md:text-xl font-bold bg-gradient-to-r from-[#00fff7] to-[#bf00ff] bg-clip-text text-transparent tracking-[3px]">BYTESWEEP</div>
+            <div className="font-['Share_Tech_Mono'] text-[9px] text-[rgba(0,255,247,0.5)] tracking-[2px] mt-[2px]">NEURAL SCANNER v4.0</div>
           </div>
         </div>
 
-        <div style={styles.navTabs}>
+        <div className="flex gap-1 md:gap-1 md:ml-14 overflow-x-auto md:overflow-visible">
           {['scanner', 'terminal', 'results', 'settings'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActivePanel(tab)}
-              style={{
-                ...styles.navTab,
-                ...(activePanel === tab ? styles.navTabActive : {}),
-              }}
+              className={`px-2 py-1.5 md:px-4 md:py-2 rounded-md text-[10px] md:text-[11px] font-['Orbitron'] tracking-[1px] md:tracking-[2px] cursor-pointer transition-all duration-300 flex items-center whitespace-nowrap border border-transparent
+                ${activePanel === tab 
+                  ? 'bg-[rgba(0,255,247,0.1)] border-[rgba(0,255,247,0.3)] text-[#00fff7]' 
+                  : 'text-[#888] hover:text-[#aaa]'}`}
             >
               {tab === 'scanner' && '🔍'}
               {tab === 'terminal' && '📟'}
               {tab === 'results' && '📊'}
               {tab === 'settings' && '⚙️'}
-              <span style={{ marginLeft: 8, textTransform: 'uppercase' }}>{tab}</span>
+              <span className="hidden md:inline ml-2 uppercase">{tab}</span>
             </button>
           ))}
         </div>
 
-        <div style={styles.navRight}>
-          <div style={styles.statusBadge}>
-            <div style={{
-              ...styles.statusDot,
-              backgroundColor: isScanning ? '#00fff7' : '#666',
-              boxShadow: isScanning ? '0 0 10px #00fff7' : 'none',
-              animation: isScanning ? 'pulse 1s infinite' : 'none',
-            }} />
-            <span style={{ fontFamily: 'Orbitron', fontSize: 10, letterSpacing: 2 }}>
+        <div className="flex items-center gap-2 md:gap-4 ml-2 md:ml-auto">
+          <div className="hidden sm:flex items-center gap-2 px-3 md:px-4 bg-[rgba(255,255,255,0.05)] rounded-full border border-[rgba(255,255,255,0.1)]">
+            <div className={`w-2 h-2 rounded-full ${isScanning ? 'bg-[#00fff7] shadow-[0_0_10px_#00fff7] animate-pulse' : 'bg-[#666]'}'}`} />
+            <span className="font-['Orbitron'] text-[10px] tracking-[2px]">
               {isScanning ? 'SCANNING' : 'READY'}
             </span>
           </div>
-          <div style={styles.progressBar}>
-            <div style={{ ...styles.progressFill, width: `${scanProgress}%` }} />
+          <div className="hidden md:block w-24 md:w-28 h-1.5 bg-[rgba(255,255,255,0.1)] rounded overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-[#00fff7] to-[#bf00ff] rounded transition-all duration-300 shadow-[0_0_10px_rgba(0,255,247,0.5)]" style={{ width: `${scanProgress}%` }} />
           </div>
-          <span style={{ fontFamily: 'Orbitron', fontSize: 12, color: '#00fff7', minWidth: 50 }}>
+          <span className="font-['Orbitron'] text-[10px] md:text-xs text-[#00fff7] min-w-[30px] md:min-w-[50px] text-center">
             {Math.floor(scanProgress)}%
           </span>
         </div>
       </nav>
 
-      <div style={styles.mainLayout}>
-        <aside style={styles.sidebar}>
+      <div className="flex h-[calc(100vh-56px)] md:h-[calc(100vh-70px)] relative z-1">
+        {/* Mobile overlay */}
+        {sidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+        
+        <aside className={`fixed md:relative z-50 md:z-0 top-14 md:top-0 left-0 h-[calc(100vh-56px)] md:h-full w-72 md:w-[300px] p-5 bg-[rgba(10,10,15,0.95)] md:bg-[rgba(10,10,15,0.8)] backdrop-blur-xl md:backdrop-blur-20 border-r border-[rgba(0,255,247,0.1)] flex flex-col gap-4 overflow-y-auto transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
           <div style={styles.glassPanel}>
             <div style={styles.panelHeader}>
               <span style={styles.panelDot} />
@@ -284,12 +293,16 @@ const ByteSweepScanner = () => {
           <button style={styles.stopButton}>
             ◼ ABORT
           </button>
+          
+          <button onClick={() => setSidebarOpen(false)} className="md:hidden mt-auto py-3 px-4 bg-[rgba(255,0,60,0.2)] border border-[rgba(255,0,60,0.3)] rounded-lg text-[#ff003c] font-['Orbitron'] text-xs tracking-[2px]">
+            CLOSE MENU
+          </button>
         </aside>
 
-        <main style={styles.mainContent}>
+        <main className="flex-1 p-3 md:p-5 overflow-y-auto flex flex-col gap-4 md:gap-5">
           {activePanel === 'scanner' && (
             <>
-              <div style={styles.statsGrid}>
+              <div style={styles.statsGrid} className="stats-grid">
                 {stats.map((stat, i) => (
                   <div
                     key={i}
@@ -435,7 +448,7 @@ const ByteSweepScanner = () => {
                   <button style={{ ...styles.terminalBtn, ...styles.terminalBtnPrimary }}>Export</button>
                 </div>
               </div>
-              <div ref={terminalRef} style={styles.terminalFull}>
+              <div ref={terminalRef} style={styles.terminalFull} className="terminal-full">
                 {terminalLines.map((line, i) => (
                   <div key={i} style={styles.terminalLine}>
                     <span style={styles.terminalTime}>[{line.time}]</span>
@@ -462,7 +475,7 @@ const ByteSweepScanner = () => {
                   <span style={styles.panelDot} />
                   <span style={styles.panelTitle}>QUICK ACTIONS</span>
                 </div>
-                <div style={styles.actionList}>
+                <div style={styles.actionList} className="action-list">
                   {[
                     { icon: '🗑️', label: 'Clean Duplicates', color: '#00fff7' },
                     { icon: '📦', label: 'Archive Large Files', color: '#bf00ff' },

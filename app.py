@@ -32,6 +32,13 @@ def get_file_hash(file_path):
     except:
         return None
 
+
+def get_json_safe_path(path):
+    """Convert filesystem path to JSON-safe path with forward slashes"""
+    if path is None:
+        return None
+    return path.replace(os.sep, '/')
+
 def scan_directory(folder_path):
     """Scans a single directory and returns list of file paths."""
     all_paths = []

@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ByteSweep - Neural Scanner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap"
         rel="stylesheet">
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
@@ -22,6 +23,24 @@
             min-height: 100vh;
             color: #fff;
             font-family: 'Share Tech Mono', monospace;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+            aside button {
+                width: 100% !important;
+            }
+            .action-list {
+                grid-template-columns: 1fr !important;
+                max-height: none !important;
+                overflow-y: visible !important;
+            }
+            .terminal-full {
+                height: calc(100vh - 220px) !important;
+                min-height: 180px;
+            }
         }
     </style>
 </head>
